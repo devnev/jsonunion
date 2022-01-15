@@ -1,4 +1,4 @@
-module github.com/devnev/go-tagged-json
+module github.com/devnev/jsonunion
 
 go 1.17
 
