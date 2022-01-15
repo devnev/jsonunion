@@ -14,6 +14,9 @@ type (
 	NumberStruct struct {
 		Number float32 `json:"number"`
 	}
+	ValueStruct struct {
+		Value interface{} `json:"value"`
+	}
 )
 
 var (
@@ -29,6 +32,11 @@ var (
 		TagKey: "type",
 		Tags:   []string{"a"},
 		Types:  []reflect.Type{reflect.TypeOf(NumberStruct{})},
+	}
+	coderWithValueStructATag = &Coder{
+		TagKey: "type",
+		Tags:   []string{"a"},
+		Types:  []reflect.Type{reflect.TypeOf(ValueStruct{})},
 	}
 	coderWithNumberStructAndRequiringATagAtStart = &Coder{
 		TagKey:          "type",
@@ -70,6 +78,11 @@ func TestCoder_DecodeEncodeRoundtripsOK(t *testing.T) {
 			input: `{"number": 1, "type": "a"}`,
 		},
 		{
+			title: "tag_value_after_object_field_with_sub_objects_and_arrays",
+			coder: coderWithValueStructATag,
+			input: `{"value": {"a": 1, "b": [2, 3], "c": {"d": 4}}, "type": "a"}`,
+		},
+		{
 			title: "tag_value_required_at_start_with_number_field",
 			coder: coderWithNumberStructAndRequiringATagAtStart,
 			input: `{"type": "a", "number": 1}`,
@@ -83,6 +96,34 @@ func TestCoder_DecodeEncodeRoundtripsOK(t *testing.T) {
 			require.NoError(t, err)
 			t.Logf("output is %q", string(buf))
 			assert.JSONEq(t, tc.input, string(buf))
+		})
+	}
+}
+
+func TestCoder_EncodeDecodeRoundtripsOK(t *testing.T) {
+	for _, tc := range []struct {
+		title  string
+		coder  *Coder
+		input  interface{}
+		output interface{}
+	}{
+		{
+			title: "empty_struct",
+			coder: coderWithEmpyStructATag,
+			input: EmpyStruct{},
+		},
+	} {
+		t.Run(tc.title, func(t *testing.T) {
+			buf, err := tc.coder.Encode(tc.input)
+			require.NoError(t, err)
+			t.Logf("encoded is %q", string(buf))
+			val, err := tc.coder.Decode(buf)
+			require.NoError(t, err)
+			if tc.output != nil {
+				assert.Equal(t, tc.output, val)
+			} else {
+				assert.Equal(t, tc.input, val)
+			}
 		})
 	}
 }
@@ -121,6 +162,12 @@ func TestCoder_DecodeFails(t *testing.T) {
 			input:  `1`,
 			errstr: "expected an object",
 			errval: ErrInputType,
+		},
+		{
+			title:  "object_with_value_instead_of_properties",
+			coder:  coderWithEmpyStructATag,
+			input:  "{null}",
+			errstr: "invalid character 'n'",
 		},
 		{
 			title:  "missing_tag",

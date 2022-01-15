@@ -22,7 +22,26 @@ type Coder struct {
 	RequireTagFirst bool
 }
 
+func (c *Coder) Encode(v interface{}) ([]byte, error) {
+	buf, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.InsertTag(v, buf)
+}
+
 func (c *Coder) Decode(data []byte) (interface{}, error) {
+	dstType, err := c.DecodeTag(data)
+	if dstType == nil || err != nil {
+		return nil, err
+	}
+	dst := reflect.New(dstType)
+	err = json.Unmarshal(data, dst.Interface())
+	return dst.Elem().Interface(), err
+}
+
+func (c *Coder) DecodeTag(data []byte) (reflect.Type, error) {
 	dec := json.NewDecoder(bytes.NewReader(data))
 
 	tok, err := dec.Token()
@@ -37,7 +56,7 @@ func (c *Coder) Decode(data []byte) (interface{}, error) {
 
 	for {
 		tok, err = dec.Token()
-		if tok == nil || err != nil {
+		if err != nil {
 			return nil, err
 		}
 
@@ -97,18 +116,13 @@ func (c *Coder) Decode(data []byte) (interface{}, error) {
 		return nil, fmt.Errorf("%w %q", ErrTagValue, tagValue)
 	}
 
-	dst := reflect.New(dstType)
-	err = json.Unmarshal(data, dst.Interface())
-	return dst.Elem().Interface(), err
+	return dstType, nil
 }
 
-func (c *Coder) Encode(v interface{}) ([]byte, error) {
+func (c *Coder) InsertTag(v interface{}, encoded []byte) ([]byte, error) {
 	reflected := reflect.ValueOf(v)
-	for reflected.Kind() == reflect.Interface {
-		reflected = reflected.Elem()
-	}
 	if !reflected.IsValid() {
-		return json.Marshal(v)
+		return encoded, nil
 	}
 
 	reflectedType := reflected.Type()
@@ -124,15 +138,10 @@ func (c *Coder) Encode(v interface{}) ([]byte, error) {
 		panic("bad destination type")
 	}
 
-	buf, err := json.Marshal(reflected.Interface())
-	if err != nil {
-		return nil, err
-	}
-
-	dec := json.NewDecoder(bytes.NewReader(buf))
+	dec := json.NewDecoder(bytes.NewReader(encoded))
 	firstToken, _ := dec.Token()
 	if firstToken == nil {
-		return buf, nil
+		return encoded, nil
 	}
 	if firstToken != json.Delim('{') {
 		panic("cannot add tag to non-object")
@@ -142,16 +151,16 @@ func (c *Coder) Encode(v interface{}) ([]byte, error) {
 		empty = true
 	}
 
-	objStart := bytes.IndexRune(buf, '{')
-	keyOffset := len(bytes.TrimSpace(buf)) - len(bytes.TrimSpace(buf[objStart+1:]))
+	objStart := bytes.IndexRune(encoded, '{')
+	keyOffset := len(bytes.TrimSpace(encoded)) - len(bytes.TrimSpace(encoded[objStart+1:]))
 	spaceBytes := keyOffset - 1
 	const delimBytes = 3 // colon, space, comma
 	jsonTag, _ := json.Marshal(c.TagKey)
 	jsonTagValue, _ := json.Marshal(tagValue)
 
 	dstBuf := bytes.NewBuffer(nil)
-	dstBuf.Grow(len(buf) + spaceBytes + delimBytes + len(jsonTag) + len(jsonTagValue))
-	dstBuf.Write(buf[:objStart+keyOffset])
+	dstBuf.Grow(len(encoded) + spaceBytes + delimBytes + len(jsonTag) + len(jsonTagValue))
+	dstBuf.Write(encoded[:objStart+keyOffset])
 	dstBuf.Write(jsonTag)
 	dstBuf.WriteRune(':')
 	dstBuf.WriteRune(' ')
@@ -159,7 +168,7 @@ func (c *Coder) Encode(v interface{}) ([]byte, error) {
 	if !empty {
 		dstBuf.WriteRune(',')
 	}
-	dstBuf.Write(buf[objStart+1:])
+	dstBuf.Write(encoded[objStart+1:])
 
 	return dstBuf.Bytes(), nil
 }
