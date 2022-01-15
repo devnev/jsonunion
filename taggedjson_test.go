@@ -9,43 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type (
-	EmpyStruct   struct{}
-	NumberStruct struct {
-		Number float32 `json:"number"`
-	}
-	ValueStruct struct {
-		Value interface{} `json:"value"`
-	}
-)
-
-var (
-	coderWithNoTags = &Coder{
-		TagKey: "type",
-	}
-	coderWithEmpyStructATag = &Coder{
-		TagKey: "type",
-		Tags:   []string{"a"},
-		Types:  []reflect.Type{reflect.TypeOf(EmpyStruct{})},
-	}
-	coderWithNumberStructATag = &Coder{
-		TagKey: "type",
-		Tags:   []string{"a"},
-		Types:  []reflect.Type{reflect.TypeOf(NumberStruct{})},
-	}
-	coderWithValueStructATag = &Coder{
-		TagKey: "type",
-		Tags:   []string{"a"},
-		Types:  []reflect.Type{reflect.TypeOf(ValueStruct{})},
-	}
-	coderWithNumberStructAndRequiringATagAtStart = &Coder{
-		TagKey:          "type",
-		Tags:            []string{"a"},
-		Types:           []reflect.Type{reflect.TypeOf(NumberStruct{})},
-		RequireTagFirst: true,
-	}
-)
-
 func TestCoder_DecodeEncodeRoundtripsOK(t *testing.T) {
 	for _, tc := range []struct {
 		title string
@@ -128,6 +91,31 @@ func TestCoder_EncodeDecodeRoundtripsOK(t *testing.T) {
 	}
 }
 
+func TestCoder_InsertingTagPreservesCustomSpacing(t *testing.T) {
+	for _, tc := range []struct {
+		title        string
+		valueJSON    string
+		expectedJSON string
+	}{
+		{
+			title:        "empty_object_extra_spaces",
+			valueJSON:    `   {       }       `,
+			expectedJSON: `   {       "type": "a"       }       `,
+		},
+		{
+			title:        "number_object_extra_spaces",
+			valueJSON:    `   {    "b": 1      }       `,
+			expectedJSON: `   {    "type": "a",    "b": 1      }       `,
+		},
+	} {
+		t.Run(tc.title, func(t *testing.T) {
+			buf, err := coderWithEmpyStructATag.InsertTag(EmpyStruct{}, []byte(tc.valueJSON))
+			require.NoError(t, err)
+			assert.Equal(t, tc.expectedJSON, string(buf))
+		})
+	}
+}
+
 func TestCoder_DecodeFails(t *testing.T) {
 	for _, tc := range []struct {
 		title  string
@@ -203,3 +191,40 @@ func TestCoder_DecodeFails(t *testing.T) {
 		})
 	}
 }
+
+type (
+	EmpyStruct   struct{}
+	NumberStruct struct {
+		Number float32 `json:"number"`
+	}
+	ValueStruct struct {
+		Value interface{} `json:"value"`
+	}
+)
+
+var (
+	coderWithNoTags = &Coder{
+		TagKey: "type",
+	}
+	coderWithEmpyStructATag = &Coder{
+		TagKey: "type",
+		Tags:   []string{"a"},
+		Types:  []reflect.Type{reflect.TypeOf(EmpyStruct{})},
+	}
+	coderWithNumberStructATag = &Coder{
+		TagKey: "type",
+		Tags:   []string{"a"},
+		Types:  []reflect.Type{reflect.TypeOf(NumberStruct{})},
+	}
+	coderWithValueStructATag = &Coder{
+		TagKey: "type",
+		Tags:   []string{"a"},
+		Types:  []reflect.Type{reflect.TypeOf(ValueStruct{})},
+	}
+	coderWithNumberStructAndRequiringATagAtStart = &Coder{
+		TagKey:          "type",
+		Tags:            []string{"a"},
+		Types:           []reflect.Type{reflect.TypeOf(NumberStruct{})},
+		RequireTagFirst: true,
+	}
+)
