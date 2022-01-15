@@ -2,7 +2,6 @@ package jsonunion_test
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/devnev/jsonunion"
 )
@@ -11,7 +10,7 @@ func ExampleCoder_Encode() {
 	coder := &jsonunion.Coder{
 		TagKey: "type",
 		Tags:   []string{"hello", "goodbye"},
-		Types:  []reflect.Type{reflect.TypeOf(&HelloAction{}), reflect.TypeOf(&GoodbyeAction{})},
+		Types:  []interface{}{&HelloAction{}, &GoodbyeAction{}},
 	}
 
 	buf, _ := coder.Encode(&GoodbyeAction{UntilWhen: "soon"})
@@ -23,7 +22,7 @@ func ExampleCoder_Decode() {
 	coder := &jsonunion.Coder{
 		TagKey: "type",
 		Tags:   []string{"hello", "goodbye"},
-		Types:  []reflect.Type{reflect.TypeOf(&HelloAction{}), reflect.TypeOf(&GoodbyeAction{})},
+		Types:  []interface{}{&HelloAction{}, &GoodbyeAction{}},
 	}
 
 	action, _ := coder.Decode([]byte(`{"type":"hello","target":"world"}`))

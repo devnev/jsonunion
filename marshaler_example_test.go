@@ -3,7 +3,6 @@ package jsonunion_test
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 
 	"github.com/devnev/jsonunion"
 )
@@ -61,5 +60,5 @@ func (m *MessageWithUnionProp) UnmarshalJSON(data []byte) error {
 var actionCoder = &jsonunion.Coder{
 	TagKey: "type",
 	Tags:   []string{"hello", "goodbye"},
-	Types:  []reflect.Type{reflect.TypeOf(&HelloAction{}), reflect.TypeOf(&GoodbyeAction{})},
+	Types:  []interface{}{&HelloAction{}, &GoodbyeAction{}},
 }

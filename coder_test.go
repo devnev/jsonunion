@@ -2,7 +2,6 @@ package jsonunion
 
 import (
 	"io"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -209,22 +208,22 @@ var (
 	coderWithEmpyStructATag = &Coder{
 		TagKey: "type",
 		Tags:   []string{"a"},
-		Types:  []reflect.Type{reflect.TypeOf(EmpyStruct{})},
+		Types:  []interface{}{EmpyStruct{}},
 	}
 	coderWithNumberStructATag = &Coder{
 		TagKey: "type",
 		Tags:   []string{"a"},
-		Types:  []reflect.Type{reflect.TypeOf(NumberStruct{})},
+		Types:  []interface{}{NumberStruct{}},
 	}
 	coderWithValueStructATag = &Coder{
 		TagKey: "type",
 		Tags:   []string{"a"},
-		Types:  []reflect.Type{reflect.TypeOf(ValueStruct{})},
+		Types:  []interface{}{ValueStruct{}},
 	}
 	coderWithNumberStructAndRequiringATagAtStart = &Coder{
 		TagKey:          "type",
 		Tags:            []string{"a"},
-		Types:           []reflect.Type{reflect.TypeOf(NumberStruct{})},
+		Types:           []interface{}{NumberStruct{}},
 		RequireTagFirst: true,
 	}
 )

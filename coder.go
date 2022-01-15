@@ -18,7 +18,7 @@ var (
 type Coder struct {
 	TagKey          string
 	Tags            []string
-	Types           []reflect.Type
+	Types           []interface{}
 	RequireTagFirst bool
 }
 
@@ -108,7 +108,7 @@ func (c *Coder) DecodeTag(data []byte) (reflect.Type, error) {
 	var dstType reflect.Type
 	for i := range c.Tags {
 		if c.Tags[i] == tagValue {
-			dstType = c.Types[i]
+			dstType = reflect.TypeOf(c.Types[i])
 			break
 		}
 	}
@@ -128,7 +128,7 @@ func (c *Coder) InsertTag(v interface{}, encoded []byte) ([]byte, error) {
 	reflectedType := reflected.Type()
 	var tagValue string
 	for i := range c.Types {
-		if c.Types[i] == reflectedType {
+		if reflect.TypeOf(c.Types[i]) == reflectedType {
 			tagValue = c.Tags[i]
 			break
 		}
