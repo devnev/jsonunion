@@ -7,16 +7,16 @@ import (
 	"github.com/devnev/jsonunion"
 )
 
-func ExampleMarshaler() {
+func ExampleMarshaler_separateFuncs() {
 	fmt.Println()
 
-	message := MessageWithUnionProp{
+	message := MessageWithUnionPropAndSeparateMethods{
 		Action: &HelloAction{Target: "world"},
 	}
 	buf, _ := json.Marshal(message)
 	fmt.Println("marshaled:", string(buf))
 
-	var message2 MessageWithUnionProp
+	var message2 MessageWithUnionPropAndSeparateMethods
 	_ = json.Unmarshal(buf, &message2)
 	fmt.Printf("unmarshaled: %#v\n", message2.Action)
 
@@ -25,12 +25,12 @@ func ExampleMarshaler() {
 	// unmarshaled: &jsonunion_test.HelloAction{Target:"world"}
 }
 
-type MessageWithUnionProp struct {
+type MessageWithUnionPropAndSeparateMethods struct {
 	Action Action `json:"-"`
 }
 
-func (m MessageWithUnionProp) MarshalJSON() ([]byte, error) {
-	type WithoutMarshal MessageWithUnionProp
+func (m MessageWithUnionPropAndSeparateMethods) MarshalJSON() ([]byte, error) {
+	type WithoutMarshal MessageWithUnionPropAndCombinedMethods
 	return json.Marshal(struct {
 		WithoutMarshal
 		Action jsonunion.Marshaler `json:"action"`
@@ -43,8 +43,8 @@ func (m MessageWithUnionProp) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (m *MessageWithUnionProp) UnmarshalJSON(data []byte) error {
-	type WithoutMarshal MessageWithUnionProp
+func (m *MessageWithUnionPropAndSeparateMethods) UnmarshalJSON(data []byte) error {
+	type WithoutMarshal MessageWithUnionPropAndCombinedMethods
 	return json.Unmarshal(data, &struct {
 		*WithoutMarshal
 		Action jsonunion.Marshaler `json:"action"`

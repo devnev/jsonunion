@@ -125,6 +125,12 @@ func (c *Coder) InsertTag(v interface{}, encoded []byte) ([]byte, error) {
 		return encoded, nil
 	}
 
+	// allow passing a pointer to the union field so that the same pointer can
+	// be passed to both DecodeTag and InsertTag, as in the combined example
+	if reflected.Kind() == reflect.Ptr && reflected.Elem().Kind() == reflect.Interface {
+		reflected = reflected.Elem().Elem()
+	}
+
 	reflectedType := reflected.Type()
 	var tagValue string
 	for i := range c.Types {
