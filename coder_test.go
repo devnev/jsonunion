@@ -40,9 +40,24 @@ func TestCoder_DecodeEncodeRoundtripsOK(t *testing.T) {
 			input: `{"number": 1, "type": "a"}`,
 		},
 		{
-			title: "tag_value_after_object_field_with_sub_objects_and_arrays",
+			title: "tag_value_after_empty_object_field",
 			coder: coderWithValueStructATag,
-			input: `{"value": {"a": 1, "b": [2, 3], "c": {"d": 4}}, "type": "a"}`,
+			input: `{"value": {}, "type": "a"}`,
+		},
+		{
+			title: "tag_value_after_array_field",
+			coder: coderWithValueStructATag,
+			input: `{"value": [1], "type": "a"}`,
+		},
+		{
+			title: "tag_value_after_null_field",
+			coder: coderWithValueStructATag,
+			input: `{"value": null, "type": "a"}`,
+		},
+		{
+			title: "tag_value_after_object_field_with_complex_sub_object",
+			coder: coderWithValueStructATag,
+			input: `{"value": {"a": 1, "b": [2, 3], "c": {"d": 4, "e": null}}, "type": "a"}`,
 		},
 		{
 			title: "tag_value_required_at_start_with_number_field",
@@ -173,12 +188,42 @@ func TestCoder_DecodeFails(t *testing.T) {
 			coder:  coderWithEmpyStructATag,
 			input:  `{"type": 0}`,
 			errstr: "tag value must be a string",
+			errval: ErrTagType,
 		},
 		{
-			title:  "tag_value_not_at_start_as_Required",
+			title:  "null_tag",
+			coder:  coderWithEmpyStructATag,
+			input:  `{"type": null}`,
+			errstr: "tag value must be a string",
+			errval: ErrTagType,
+		},
+		{
+			title:  "tag_value_after_number_but_required_at_start",
 			coder:  coderWithNumberStructAndRequiringATagAtStart,
 			input:  `{"number": 1, "type": "a"}`,
 			errstr: "missing tag property or not at start",
+			errval: ErrTagMissing,
+		},
+		{
+			title:  "tag_value_after_null_but_required_at_start",
+			coder:  coderWithNumberStructAndRequiringATagAtStart,
+			input:  `{"value": null, "type": "a"}`,
+			errstr: "missing tag property or not at start",
+			errval: ErrTagMissing,
+		},
+		{
+			title:  "null_tag_and_required_at_sart",
+			coder:  coderWithNumberStructAndRequiringATagAtStart,
+			input:  `{"type": null}`,
+			errstr: "tag value must be a string",
+			errval: ErrTagType,
+		},
+		{
+			title:  "number_tag_and_required_at_sart",
+			coder:  coderWithNumberStructAndRequiringATagAtStart,
+			input:  `{"type": 1}`,
+			errstr: "tag value must be a string",
+			errval: ErrTagType,
 		},
 	} {
 		t.Run(tc.title, func(t *testing.T) {

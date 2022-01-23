@@ -72,13 +72,13 @@ func (c *Coder) DecodeTag(data []byte) (reflect.Type, error) {
 				return nil, fmt.Errorf("%w or not at start", ErrTagMissing)
 			}
 			tok, err = dec.Token()
-			if tok == nil || err != nil {
+			if err != nil {
 				return nil, err
 			}
 		} else {
 			for depth := 0; true; {
 				tok, err = dec.Token()
-				if tok == nil || err != nil {
+				if err != nil {
 					return nil, err
 				}
 				if tok == json.Delim('[') || tok == json.Delim('{') {
