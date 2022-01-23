@@ -40,4 +40,4 @@ go get github.com/devnev/jsonunion
 
 ## Usage
 
-See examples in the Go package documentation or [in the source code](marshaler_example_test.go).
+See examples in the Go package documentation or [in the source code](marshaler_example_combined_test.go).
