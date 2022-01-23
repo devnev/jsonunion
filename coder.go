@@ -9,10 +9,11 @@ import (
 )
 
 var (
-	ErrInputType  = errors.New("expected an object")
-	ErrTagMissing = errors.New("missing tag property")
-	ErrTagType    = errors.New("tag value must be a string")
-	ErrTagValue   = errors.New("unknown tag value")
+	Err           = errors.New("")
+	ErrInputType  = fmt.Errorf("expected an object%w", Err)
+	ErrTagMissing = fmt.Errorf("missing tag property%w", Err)
+	ErrTagType    = fmt.Errorf("tag value must be a string%w", Err)
+	ErrTagValue   = fmt.Errorf("unknown tag value%w", Err)
 )
 
 type Coder struct {

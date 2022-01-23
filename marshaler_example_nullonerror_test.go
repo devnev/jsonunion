@@ -7,51 +7,51 @@ import (
 	"github.com/devnev/jsonunion"
 )
 
-func ExampleMarshaler_combinedMethods() {
+func ExampleMarshaler_nullOnError() {
 	fmt.Println()
 
-	message := MessageWithUnionPropAndCombinedMethods{
+	message := MessageWithUnionPropAndNullForErrors{
 		Action: &HelloAction{Target: "world"},
 	}
 	buf, _ := json.Marshal(message)
 	fmt.Println("marshaled:", string(buf))
 
-	var message2 MessageWithUnionPropAndCombinedMethods
+	var message2 MessageWithUnionPropAndNullForErrors
 	_ = json.Unmarshal(buf, &message2)
 	fmt.Printf("unmarshaled: %#v\n", message2.Action)
 
 	// unknown tag value
-	var message3 MessageWithUnionPropAndCombinedMethods
+	var message3 MessageWithUnionPropAndNullForErrors
 	err := json.Unmarshal([]byte(`{"action":{"type":"unknown"}}`), &message3)
 	fmt.Printf("unmarshaled: %#v (%v)\n", message3.Action, err)
 
 	// not an object
-	var message4 MessageWithUnionPropAndCombinedMethods
+	var message4 MessageWithUnionPropAndNullForErrors
 	err = json.Unmarshal([]byte(`{"action":"woopsy"}`), &message4)
 	fmt.Printf("unmarshaled: %#v (%v)\n", message4.Action, err)
 
 	// missing tag
-	var message5 MessageWithUnionPropAndCombinedMethods
+	var message5 MessageWithUnionPropAndNullForErrors
 	err = json.Unmarshal([]byte(`{"action":{"foo":"bar"}}`), &message5)
 	fmt.Printf("unmarshaled: %#v (%v)\n", message5.Action, err)
 
 	// Output:
 	// marshaled: {"action":{"type":"hello","target":"world"}}
 	// unmarshaled: &jsonunion_test.HelloAction{Target:"world"}
-	// unmarshaled: <nil> (unknown tag value "unknown")
-	// unmarshaled: <nil> (expected an object)
-	// unmarshaled: <nil> (missing tag property)
+	// unmarshaled: <nil> (<nil>)
+	// unmarshaled: <nil> (<nil>)
+	// unmarshaled: <nil> (<nil>)
 }
 
-type MessageWithUnionPropAndCombinedMethods struct {
+type MessageWithUnionPropAndNullForErrors struct {
 	Action Action `json:"-"`
 }
 
-func (m *MessageWithUnionPropAndCombinedMethods) wrapForJSON() interface{} {
+func (m *MessageWithUnionPropAndNullForErrors) wrapForJSON() interface{} {
 	// In this example we can combine everything into one definition inside this
 	// method, with some potential performance downsides due to extra allocation
 	// and reflect calls.
-	type WithoutMarshal MessageWithUnionPropAndCombinedMethods
+	type WithoutMarshal MessageWithUnionPropAndNullForErrors
 	return &struct {
 		*WithoutMarshal
 		Action jsonunion.Marshaler `json:"action"`
@@ -64,14 +64,15 @@ func (m *MessageWithUnionPropAndCombinedMethods) wrapForJSON() interface{} {
 				Tags:   []string{"hello", "goodbye"},
 				Types:  []interface{}{&HelloAction{}, &GoodbyeAction{}},
 			},
+			NilOnErrors: true,
 		},
 	}
 }
 
-func (m MessageWithUnionPropAndCombinedMethods) MarshalJSON() ([]byte, error) {
+func (m MessageWithUnionPropAndNullForErrors) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m.wrapForJSON())
 }
 
-func (m *MessageWithUnionPropAndCombinedMethods) UnmarshalJSON(data []byte) error {
+func (m *MessageWithUnionPropAndNullForErrors) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, m.wrapForJSON())
 }

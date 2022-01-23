@@ -1,21 +1,45 @@
 package jsonunion
 
-import "reflect"
+import (
+	"encoding/json"
+	"errors"
+	"reflect"
+)
 
 type Marshaler struct {
-	Value interface{}
-	Coder *Coder
+	Value       interface{}
+	Coder       *Coder
+	NilOnErrors bool
 }
 
 func (m Marshaler) MarshalJSON() ([]byte, error) {
-	return m.Coder.Encode(m.Value)
+	buf, err := json.Marshal(m.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	if buf, err = m.Coder.InsertTag(m.Value, buf); m.NilOnErrors && errors.Is(err, Err) {
+		return json.Marshal(nil)
+	}
+
+	return buf, err
 }
 
 func (m *Marshaler) UnmarshalJSON(data []byte) error {
-	value, err := m.Coder.Decode(data)
+	dstType, err := m.Coder.DecodeTag(data)
+	if dstType == nil || err != nil {
+		if m.NilOnErrors && errors.Is(err, Err) {
+			return nil
+		}
+		return err
+	}
+
+	dst := reflect.New(dstType)
+	err = json.Unmarshal(data, dst.Interface())
 	if err != nil {
 		return err
 	}
-	reflect.ValueOf(m.Value).Elem().Set(reflect.ValueOf(value))
+
+	reflect.ValueOf(m.Value).Elem().Set(dst.Elem())
 	return nil
 }
