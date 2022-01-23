@@ -18,11 +18,7 @@ func (m Marshaler) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	if buf, err = m.Coder.InsertTag(m.Value, buf); m.NilOnErrors && errors.Is(err, Err) {
-		return json.Marshal(nil)
-	}
-
-	return buf, err
+	return m.Coder.InsertTag(m.Value, buf), nil
 }
 
 func (m *Marshaler) UnmarshalJSON(data []byte) error {

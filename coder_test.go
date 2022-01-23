@@ -123,8 +123,7 @@ func TestCoder_InsertingTagPreservesCustomSpacing(t *testing.T) {
 		},
 	} {
 		t.Run(tc.title, func(t *testing.T) {
-			buf, err := coderWithEmpyStructATag.InsertTag(EmpyStruct{}, []byte(tc.valueJSON))
-			require.NoError(t, err)
+			buf := coderWithEmpyStructATag.InsertTag(EmpyStruct{}, []byte(tc.valueJSON))
 			assert.Equal(t, tc.expectedJSON, string(buf))
 		})
 	}

@@ -29,7 +29,7 @@ func (c *Coder) Encode(v interface{}) ([]byte, error) {
 		return nil, err
 	}
 
-	return c.InsertTag(v, buf)
+	return c.InsertTag(v, buf), nil
 }
 
 func (c *Coder) Decode(data []byte) (interface{}, error) {
@@ -120,10 +120,10 @@ func (c *Coder) DecodeTag(data []byte) (reflect.Type, error) {
 	return dstType, nil
 }
 
-func (c *Coder) InsertTag(v interface{}, encoded []byte) ([]byte, error) {
+func (c *Coder) InsertTag(v interface{}, encoded []byte) []byte {
 	reflected := reflect.ValueOf(v)
 	if !reflected.IsValid() {
-		return encoded, nil
+		return encoded
 	}
 
 	// allow passing a pointer to the union field so that the same pointer can
@@ -148,7 +148,7 @@ func (c *Coder) InsertTag(v interface{}, encoded []byte) ([]byte, error) {
 	dec := json.NewDecoder(bytes.NewReader(encoded))
 	firstToken, _ := dec.Token()
 	if firstToken == nil {
-		return encoded, nil
+		return encoded
 	}
 	if firstToken != json.Delim('{') {
 		panic("cannot add tag to non-object")
@@ -177,5 +177,5 @@ func (c *Coder) InsertTag(v interface{}, encoded []byte) ([]byte, error) {
 	}
 	dstBuf.Write(encoded[objStart+1:])
 
-	return dstBuf.Bytes(), nil
+	return dstBuf.Bytes()
 }
